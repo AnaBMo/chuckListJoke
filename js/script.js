@@ -1,12 +1,22 @@
+/* *************************************************************
+             MODIFICADO TRAS CORRECCIONES EN CLASE
+************************************************************** */
+
 /* -------------------------------------------------------------
-1. Manejador de click en el botón "Obtener Chiste"
+1. Evento de click en el botón "Obtener Chiste"
     El botón al mismo tiempo 
         - muestra el chiste
         - lo guarda en localStore
 -------------------------------------------------------------- */
-const obtenerChiste = document.getElementById('fetchJoke');
+const fetchJokeButton = document.getElementById('fetchJoke'); // recomendable poner Btn en el nombre para recordar que va un evento en el botón
+const jokeList = document.getElementById('jokeList');
 
-fetchJoke.addEventListener('click', () => {
+// cargar chistes del localStore
+// para traer algo de localStore sin fallos, se usa el método JSON.parse()
+let jokes = JSON.parse(localStorage.getItem('jokes')) || []; // trae el conjunto de chistes y, si no existe, arranca con array vacío
+
+// evento para obtener chistes desde el botón --> fetch llama a la API
+fetchJokeButton.addEventListener('click', () => {
     fetch(`https://api.chucknorris.io/jokes/random`)
         .then((response) => {
             console.log('🟢 Respuesta:', response);
@@ -17,12 +27,17 @@ fetchJoke.addEventListener('click', () => {
         })
         .then((data) => {
             console.log('🟦 API devuelve el chiste ok? ', data.value);
-            mostrarChiste(data.value);
-            guardarChiste(data.value); 
+            let joke = data.value; // recomendable para usar la variable en lugar de llamar a data.value
+            console.log('⬜ data.value dentro de varible', joke);
+            jokes.push(joke); // cada chiste iría al array vacío 
+            localStorage.setItem('jokes',  JSON.stringify(jokes)); // el array ya con los chistes dentro se actualiza en localStorage 
+                // para meter algo en localStore sin fallos se usa el método JSON.stringify()
+            
+            renderJokes(jokes); // llamo a la función para pintar o renderizar los chistes. Aquí hay que ponerle el array vacío de arriba
         })
         .catch((error) => {
             console.error('🔴 Fallo fetch:', error);
-            obtenerChiste.innerText = 'No se han podido obtener los datos.';
+            renderJokes.innerText = 'No se han podido obtener los datos.';
         });
 });
 
@@ -31,31 +46,48 @@ fetchJoke.addEventListener('click', () => {
     - añadir cada chiste a la lista de HTML
     - poder borrar cada chiste individualmente
 -------------------------------------------------------------- */
-const mostrarChiste = (chiste) => {
-    console.log('🟡Función muestra chiste ok? ', chiste);
+function renderJokes (jokesArray) {
+    console.log('🟡Función muestra chiste ok? ', jokesArray);
+    jokeList.innerHTML = '';
 
-    const listaChistes = document.getElementById('jokeList');
+    // recorrer para crear el botón de eliminar en cada chiste
+    for (let i = 0; i < jokesArray.length; i++) {
+        let li = document.createElement('li');
+        li.textContent = jokesArray[i];
 
-    const contenedorChiste = document.createElement('li');
-    contenedorChiste.classList.add('chiste');
-    contenedorChiste.innerHTML = `
-        <p>${chiste}</p>
-        <button class="eliminar-chiste">Eliminar</button> 
-    `;                           //crear el botón en HTML para eliminar chiste individual
-    listaChistes.appendChild(contenedorChiste);
+        let deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Eliminar';
+        // después de crear el botón en el DOM, se le programa directamente la funcionalidad
+        // la idea del filtro es que devuelva de nuevo la lista SIN el chiste eliminado
+        
+        deleteButton.addEventListener('click', () => {
+            let jokeToDelete = jokesArray[i]; // Guardamos el chiste que se eliminará
+            console.log('🗑️ Chiste eliminado:', jokeToDelete); // Mostramos el chiste eliminado en la consola
 
-    // poder borrar cada chiste individualmente
-    const botonEliminar = contenedorChiste.querySelector('.eliminar-chiste'); // querySelector selecciona por clase
-    botonEliminar.addEventListener('click', () => {
-        eliminarChiste(chiste);
-        listaChistes.removeChild(contenedorChiste);
-    });
+            jokes = jokesArray.filter((j) => {
+                return j !== jokeToDelete;
+            }); // Filtramos la lista para eliminar el chiste
+            localStorage.setItem('jokes', JSON.stringify(jokes)); // Actualizamos el localStorage
+            renderJokes(jokes); // Re-renderizamos la lista actualizada 
+             
+        }) 
+        // renderizar cada chiste y botones eliminar
+        li.appendChild(deleteButton);
+        jokeList.appendChild(li);
+    }
 };
+
+//localStorage.clear();
+
+/* -------------------------------------------------------------
+LOS PUNTOS 3, 4 y 5 SE HAN HECHO EN CLASE DENTRO DEL EVENTO CLICK 
+Y QUEDA MÁS SENCILLO.
+-------------------------------------------------------------- */
 
 /* -------------------------------------------------------------
 3. Una función para guardar la lista de chistes en localStorage
 -------------------------------------------------------------- */
-const guardarChiste = (chiste) => {
+/* const guardarChiste = (chiste) => {
 
     const contador = parseInt(localStorage.getItem('chistesContador') || '0', 10); // si no ponemos parseInt da el fallo comentado abajo
     const clave = `chiste_${contador}`;
@@ -65,13 +97,13 @@ const guardarChiste = (chiste) => {
 
     console.log(`🟧 Chiste guardado: ${clave} => ${chiste}`);
 };
-
+ */
 
 
 /* -------------------------------------------------------------
 4. Una función para cargar la lista de chistes desde localStorage
 -------------------------------------------------------------- */
-const cargarChistes = () => {
+/* const cargarChistes = () => {
     const listaChistes = document.getElementById('jokeList');
     listaChistes.innerHTML = ''; // lista vacía
 
@@ -84,12 +116,12 @@ const cargarChistes = () => {
             mostrarChiste(chiste);
         }
     }
-};
+}; */
 
 /* -------------------------------------------------------------
 5. Una función para eliminar un chiste específico del localStorage
 -------------------------------------------------------------- */
-const eliminarChiste = (chiste) => {
+/* const eliminarChiste = (chiste) => {
     for (let i = 0; i < localStorage.length; i++) {
         const clave = localStorage.key(i);
 
@@ -100,6 +132,8 @@ const eliminarChiste = (chiste) => {
             break;
         }
     }
-};
+}; */
 
-/* NOTA: hay fallos en el punto 3 (chiste guardado)- PARECE RELACIONADO CON EL CONTADOR y poner parseInt o no hacerlo. */
+/* -------------------------------------------------------------
+6. Una función para eliminar todos los chistes del localStore
+-------------------------------------------------------------- */
